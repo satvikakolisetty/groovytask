@@ -2,7 +2,7 @@ job("job1") {
   description("This job will pull the github repo on every push, update the container using given Dockerfile and push image to DockerHub")
   
   scm {
-    github('devil-test/dockerfile','master')
+    github('satvikakolisetty/dockerwitjenkins','master')
   }
   
   triggers {
@@ -15,9 +15,9 @@ job("job1") {
   
   steps {
     dockerBuildAndPublish {
-      repositoryName('ashishkr99/httpd-server')
+      repositoryName('1811003010583/httpd_cont')
       tag("latest")
-      dockerHostURI('tcp://0.0.0.0:1234')
+      dockerHostURI('tcp://0.0.0.0:4243')
       registryCredentials('docker-hub')
       createFingerprints(false)
       skipDecorate(false)
@@ -27,14 +27,14 @@ job("job1") {
   
 }
 
-job("task6-job2") {
+job("job2") {
   description("This will run on slave nodes and control K8S.")
   triggers {
-    upstream('task6-job1', 'SUCCESS')
+    upstream('job1', 'SUCCESS')
   }
   
   command = """
-export len1=\$(ls -l /var/lib/jenkins/workspace/task6-job1 | grep html | wc -l)
+export len1=\$(ls -l /var/lib/jenkins/workspace/job1 | grep html | wc -l)
 if [ \$len1 -gt 0 ]
 then
 	export len2=\$(sudo kubectl get deployments | grep webserver | wc -l)
@@ -43,7 +43,7 @@ then
 		sudo kubectl rollout restart deployment/webserver
 		sudo kubectl rollout status deployment/webserver
   else
-		sudo kubectl create deployment webserver --image=ashishkr99/httpd-server:latest
+		sudo kubectl create deployment webserver --image=1811003010583/http_cont:latest
 		sudo kubectl scale deployment webserver --replicas=3
 		sudo kubectl expose deployment webserver --port 80 --type NodePort
 	fi
@@ -56,11 +56,11 @@ fi
   
 }
 
-job("task6-job3") {
+job("job3") {
   description ("It will test if pod is running else send a mail")
   
   triggers {
-    upstream('task6-job2', 'SUCCESS')
+    upstream('job2', 'SUCCESS')
   }
   steps {
     shell('''if sudo kubectl get deployments webserver
@@ -79,13 +79,13 @@ fi''')
           attachBuildLog(true)
           subject('Build successfull')
           content('The build was successful and deployment was done.')
-          recipientList('ashish.dav99@gmail.com')
+          recipientList('satvikakolisetty@gmail.com')
         }
         failure{
           attachBuildLog(true)
           subject('Failed build')
           content('The build was failed')
-          recipientList('ashish.dav99@gmail.com')
+          recipientList('satvikakolisetty@gmail.com')
         }
       }
     }
@@ -98,12 +98,12 @@ fi''')
 
 
 
-buildPipelineView('TASK-6') {
+buildPipelineView('task6') {
   filterBuildQueue(true)
   filterExecutors(false)
-  title('TASK-6')
+  title('task6')
   displayedBuilds(1)
-  selectedJob('task6-job1')
+  selectedJob('job1')
   alwaysAllowManualTrigger(false)
   showPipelineParameters(true)
   refreshFrequency(1)
